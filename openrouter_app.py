@@ -1,12 +1,10 @@
 """
-OpenRouter Vision API Demo
-Demonstrates image analysis using GPT-4 Vision via OpenRouter
-Useful for security camera analysis, document scanning, and visual threat detection
+OpenRouter Local Vision Analysis
+Analyzes 'security_image.jpeg' in the script's directory
 """
 
 import os
 import base64
-import json
 from openai import OpenAI
 from pathlib import Path
 
@@ -14,7 +12,8 @@ def get_client():
     """Initialize the OpenAI client configured for OpenRouter"""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY environment variable not set")
+        raise ValueError("OPENROUTER_API_KEY environment variable not set. "
+                         "Run: export OPENROUTER_API_KEY='your_key_here'")
     
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
@@ -23,79 +22,33 @@ def get_client():
 
 def encode_image_to_base64(image_path):
     """Encode a local image file to base64 string"""
-    try:
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Image file not found: {image_path}")
-    except Exception as e:
-        raise Exception(f"Error encoding image: {str(e)}")
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
 
-
-def analyze_image_from_url(image_url, prompt="What's in this image?", detail="auto"):
-    """Analyze an image from a URL using OpenRouter"""
+def analyze_local_security_image(image_filename, prompt):
+    """
+    Reads a local file and sends it to OpenRouter for analysis
+    """
     client = get_client()
     
-    try:
-        print(f"Analyzing image from URL...")
-        print(f"Prompt: '{prompt}'")
-        print(f"Detail level: {detail}\n")
-        
-        response = client.chat.completions.create(
-            model="openai/gpt-4o",  # OpenRouter uses provider/model format
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url,
-                                "detail": detail
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=1000,
-            extra_headers={
-                "HTTP-Referer": "https://your-app-url.com", # Optional
-                "X-Title": "Vision Demo",                    # Optional
-            }
-        )
-        
-        # Extract response data
-        analysis = response.choices[0].message.content
-        
-        return {
-            'success': True,
-            'analysis': analysis,
-            'model': response.model,
-            'tokens_used': response.usage.total_tokens,
-            'prompt_tokens': response.usage.prompt_tokens,
-            'completion_tokens': response.usage.completion_tokens
-        }
-        
-    except Exception as e:
-        print(f"✗ Error analyzing image: {str(e)}")
-        return {'success': False, 'error': str(e)}
+    # Construct the full path based on the script's location
+    script_dir = Path(__file__).parent
+    image_path = script_dir / image_filename
 
+    if not image_path.exists():
+        print(f"✗ Error: The file '{image_filename}' was not found in {script_dir}")
+        return
 
-def analyze_image_from_file(image_path, prompt="What's in this image?", detail="auto"):
-    """Analyze a local image file using OpenRouter"""
-    client = get_client()
-    
     try:
-        print(f"Analyzing local image: {image_path}")
-        
+        print(f"--- Starting Analysis of {image_filename} ---")
         base64_image = encode_image_to_base64(image_path)
-        file_ext = Path(image_path).suffix.lower()
-        mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp'}
-        mime_type = mime_types.get(file_ext, 'image/jpeg')
         
+        # Determine MIME type based on extension
+        ext = image_path.suffix.lower()
+        mime_type = "image/jpeg" if ext in ['.jpg', '.jpeg'] else "image/png"
+
         response = client.chat.completions.create(
-            model="openai/gpt-4o",
+            model="openai/gpt-4o",  # You can also use "google/gemini-pro-1.5-vision"
             messages=[
                 {
                     "role": "user",
@@ -105,49 +58,33 @@ def analyze_image_from_file(image_path, prompt="What's in this image?", detail="
                             "type": "image_url",
                             "image_url": {
                                 "url": f"data:{mime_type};base64,{base64_image}",
-                                "detail": detail
+                                "detail": "high" # 'high' is better for security/detail-oriented tasks
                             }
                         }
                     ]
                 }
-            ],
-            max_tokens=1000
+            ]
         )
-        
-        return {
-            'success': True,
-            'analysis': response.choices[0].message.content,
-            'model': response.model,
-            'tokens_used': response.usage.total_tokens
-        }
+
+        analysis = response.choices[0].message.content
+        print("\n[AI ANALYSIS]:")
+        print("-" * 30)
+        print(analysis)
+        print("-" * 30)
         
     except Exception as e:
-        print(f"✗ Error analyzing image: {str(e)}")
-        return {'success': False, 'error': str(e)}
-
+        print(f"✗ An error occurred during analysis: {e}")
 
 def main():
-    """Main demonstration function"""
-    print("=" * 60)
-    print("OpenRouter Vision API Demo")
-    print("=" * 60 + "\n")
-    
-    # Example 1: URL Analysis
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-    
-    result = analyze_image_from_url(
-        image_url=image_url,
-        prompt="Describe this image in detail. What are the key elements?"
+    # Configuration
+    TARGET_FILE = "security_image.jpeg"
+    SECURITY_PROMPT = (
+        "Analyze this security camera image. Identify any individuals, "
+        "vehicles, or objects that look out of place. Provide a summary of "
+        "potential security concerns."
     )
-    
-    if result['success']:
-        print("\nANALYSIS RESULT:")
-        print("-" * 60)
-        print(result['analysis'])
-        print(f"\nTokens used: {result['tokens_used']}")
-    
-    print("\n" + "=" * 60)
-    print("Demo Complete!")
+
+    analyze_local_security_image(TARGET_FILE, SECURITY_PROMPT)
 
 if __name__ == "__main__":
     main()
