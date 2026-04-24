@@ -80,7 +80,7 @@ def main():
     TARGET_FILE = "security_image.jpeg"
     SECURITY_PROMPT = f"""
     Act as a professional Security Operations Center (SOC) Analyst. 
-    Analyze the provided image ({image_filename}) and provide a structured security report.
+    Analyze the provided image ({TARGET_FILE}) and provide a structured security report.
 
     1. TIMESTAMPS & SOURCE:
        - Identify the Camera ID (e.g., CAM 2).
