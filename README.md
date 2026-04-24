@@ -17,5 +17,4 @@ SETUP INSTRUCTIONS:
    export OPENAI_API_KEY='your-api-key-here'  # Linux/Mac
    set OPENAI_API_KEY=your-api-key-here        # Windows
 
-7. Run the script:
-   python openai_vision_demo.py
+7. Run the script
