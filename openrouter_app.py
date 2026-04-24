@@ -48,7 +48,7 @@ def analyze_local_security_image(image_filename, prompt):
         mime_type = "image/jpeg" if ext in ['.jpg', '.jpeg'] else "image/png"
 
         response = client.chat.completions.create(
-            model="openai/gpt-4o",  # You can also use "google/gemini-pro-1.5-vision"
+            model="google/gemini-pro-1.5-vision",  # You can also use "openai/gpt-4o"
             messages=[
                 {
                     "role": "user",
