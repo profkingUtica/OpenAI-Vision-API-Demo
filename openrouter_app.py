@@ -78,11 +78,33 @@ def analyze_local_security_image(image_filename, prompt):
 def main():
     # Configuration
     TARGET_FILE = "security_image.jpeg"
-    SECURITY_PROMPT = (
-        "Analyze this security camera image. Identify any individuals, "
-        "vehicles, or objects that look out of place. Provide a summary of "
-        "potential security concerns."
-    )
+SECURITY_PROMPT = f"""
+Act as a professional Security Operations Center (SOC) Analyst. 
+Analyze the provided image ({image_filename}) and provide a structured security report.
+
+1. TIMESTAMPS & SOURCE:
+   - Identify the Camera ID (e.g., CAM 2).
+   - Record the exact date and time shown in the overlay.
+
+2. SUBJECT IDENTIFICATION:
+   - Identify all people in the frame. 
+   - For the individual in uniform: Identify the agency name visible on their clothing (e.g., 'POLICE'). Note if they are armed or carrying equipment (handcuffs, radio, notebook).
+   - For the civilians: Describe their attire, physical build, and demeanor.
+
+3. BEHAVIORAL ANALYSIS:
+   - Describe the interaction. Is it a confrontational, cooperative, or investigative scene?
+   - Note specific gestures. (e.g., "The male in the brown jacket is pointing toward the camera/house.")
+   - Is anyone taking notes or using a mobile device?
+
+4. ANOMALY DETECTION:
+   - Identify any objects that are out of place.
+   - Are there vehicles visible in the background? If so, provide color and type.
+   - Identify any potential security vulnerabilities visible (e.g., open windows, unsecure perimeter).
+
+5. RISK ASSESSMENT:
+   - Categorize this event: [Routine/Authorized], [Suspicious], or [Emergency].
+   - Provide a 1-sentence summary of what is happening for a security log.
+"""
 
     analyze_local_security_image(TARGET_FILE, SECURITY_PROMPT)
 
